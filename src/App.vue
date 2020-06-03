@@ -1,28 +1,70 @@
 <template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
+  <div class="container mt-5">
+    <!-- 검색 창 -->
+    <SearchBar @input-change="onInputChange" />
+    <div class="row">
+      <VideoDetail :selectedVideo="selectedVideo" />
+      <!-- data로 저장 안하고 바로 보내기 가능?? -->
+      <!-- 데이터로 저장 한번 해야 App에 들리는 거라고 할 수 있다. -->
+      <VideoList  
+      @video-select="onVideoSelect" 
+      :videos="videos"
+      />
+    </div>
+
+
   </div>
 </template>
 
 <script>
-import HelloWorld from './components/HelloWorld.vue'
+import axios from 'axios'
+
+import SearchBar from './components/SearchBar.vue'
+import VideoList from './components/VideoList.vue'
+import VideoDetail from './components/VideoDetail.vue'
+
+const API_KEY = 'AIzaSyA7e1J1LsuM_osfsNikDPJWaRdtsJbgYhQ'
+const API_URL = "https://www.googleapis.com/youtube/v3/search"
 
 export default {
   name: 'App',
   components: {
-    HelloWorld
-  }
+      SearchBar,VideoList,VideoDetail
+  },
+  data() {
+    return{
+      inputValue: '',
+      videos: [],
+      selectedVideo: null,
+    }
+  },
+  methods:{
+    onInputChange(data) {
+      this.inputValue = data
+      axios.get(API_URL, {params:{
+        key: API_KEY,
+        part:'snippet',
+        type:'video',
+        q: this.inputValue
+      }
+      }) .then(res => {
+        res.data.items.forEach(item =>{
+          let parser = new DOMParser()
+          let doc = parser.parseFromString(item.snippet.title, 'text/html')
+          item.snippet.title = doc.body.innerText
+        })
+          this.videos = res.data.items
+        }) 
+        .catch(err => console.log(err))
+    },
+    onVideoSelect(video) {
+      this.selectedVideo= video
+    },
+  },
 }
 </script>
 
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
+
+
 </style>
